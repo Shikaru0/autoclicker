@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 evdev = "0.12"
+config = "0.15.25"
