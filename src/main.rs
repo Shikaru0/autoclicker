@@ -1,8 +1,8 @@
 use std::time::Duration;
 use std::thread;
 
-use evdev::{AttributeSet, EventType, InputEvent, Key};
-use evdev::uinput::{VirtualDevice, VirtualDeviceBuilder};
+use evdev::{AttributeSet, EventType, InputEvent, KeyCode};
+use evdev::uinput::{VirtualDevice};
 
 use config::Config;
 
@@ -16,16 +16,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let delay = settings.get_int("delay")?;
 
     let key = match settings.get_string("key")?.as_str(){
-        "left" => Key::BTN_LEFT,
-        "right" => Key::BTN_RIGHT,
+        "left" => KeyCode::BTN_LEFT,
+        "right" => KeyCode::BTN_RIGHT,
         _ => return Err("Use 'left' or 'right' for key input.".into()),
     };
 
-    let mut keys = AttributeSet::<Key>::new();
-    keys.insert(Key::BTN_LEFT);
-    keys.insert(Key::BTN_RIGHT);
+    let mut keys = AttributeSet::<KeyCode>::new();
+    keys.insert(KeyCode::BTN_LEFT);
+    keys.insert(KeyCode::BTN_RIGHT);
 
-    let mut device = VirtualDeviceBuilder::new()?
+    let mut device = VirtualDevice::builder()?
         .name("rust-autoclicker")
         .with_keys(&keys)?
         .build()?;
@@ -43,10 +43,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 // Click function
-fn click(device: &mut VirtualDevice, key: Key) -> Result<(), Box<dyn std::error::Error>> {
-        device.emit(&[InputEvent::new(EventType::KEY, key.0, 1,)])?;
+fn click(device: &mut VirtualDevice, key: KeyCode) -> Result<(), Box<dyn std::error::Error>> {
+        device.emit(&[InputEvent::new(EventType::KEY.0, key.0, 1,)])?;
         // 1 ms delay so it registers correctly.
         thread::sleep(Duration::from_millis(1));
-        device.emit(&[InputEvent::new(EventType::KEY, key.0,0)])?;
+        device.emit(&[InputEvent::new(EventType::KEY.0, key.0,0)])?;
     Ok(())
 }
