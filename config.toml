@@ -1,2 +1,5 @@
 key = "left"
+keybind = "KEY_F"
 delay = 500
+toggle = true
+input_device_path = "/dev/input/event3"
