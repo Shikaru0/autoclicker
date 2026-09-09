@@ -1,35 +1,18 @@
-use std::str::FromStr;
+mod config;
+mod input;
+mod click;
+
 use std::time::Duration;
 use std::thread;
-use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
+use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
 
-use evdev::{AttributeSet, Device, EventSummary, EventType, InputEvent, KeyCode};
+use evdev::{AttributeSet, KeyCode};
 use evdev::uinput::{VirtualDevice};
-
-use config::Config;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("main.rs initialized"); // just to test if it loads correctly
 
-    let settings = Config::builder()
-        .add_source(config::File::with_name("config"))
-        .build()?;
-
-    let delay = settings.get_int("delay")?;
-
-    let input_device_path = settings.get_string("input_device_path")?;
-
-    let key_string = settings.get_string("keybind")?;
-
-    let keybind = KeyCode::from_str(&key_string)?;
-
-    let key = match settings.get_string("key")?.as_str(){
-        "left" => KeyCode::BTN_LEFT,
-        "right" => KeyCode::BTN_RIGHT,
-        _ => return Err("Use 'left' or 'right' for key input.".into()),
-    };
-
-    let toggle = settings.get_bool("toggle")?;
+    let shared_config = Arc::new(Mutex::new(config::load_config()?));
 
     let mut keys = AttributeSet::<KeyCode>::new();
     keys.insert(KeyCode::BTN_LEFT);
@@ -43,66 +26,42 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Keys and Device set up.");
 
     let key_held = Arc::new(AtomicBool::new(false));
-    let key_held_input = Arc::clone(&key_held);
 
-    // Input thread
-    thread::spawn(move || -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let mut input = Device::open(&input_device_path)?;
-
-        loop{
-            match input.fetch_events(){
-                Ok(events) => {
-                    for event in events{
-                        if let EventSummary::Key(_, k, state) = event.destructure() {
-                            if k == keybind {
-                                if toggle{
-                                    if state == 1{
-                                        let _ = key_held_input.fetch_xor(true, Ordering::Relaxed);
-                                    }
-                                }
-                                else{
-                                    match state{
-                                        1 => {
-                                            key_held_input.store(true, Ordering::Relaxed);
-                                        }
-                                        0 => {
-                                            key_held_input.store(false, Ordering::Relaxed);
-                                        }
-                                        _ => {}
-                                    }
-                                }
-                            }
-                        }            
-                    }
-                }
-                Err(e) => {
-                    eprint!("{e}");
-                    thread::sleep(Duration::from_millis(1000));
-                }
-            }
-        }
-    });
+    // Initialize input thread
+    input::initialize(Arc::clone(&key_held), Arc::clone(&shared_config));
 
     // Insert a pause so the system can detect and initialize the new device.
     thread::sleep(Duration::from_millis(300));
 
+    // Quick test to see if config saving/loading/refreshing works. (for this to work, make sure that in cfg.delay = x, x is different from delay in config.toml)
+    /*
+    {
+        let mut cfg = shared_config.lock().unwrap();
+        cfg.delay = 300;
+    }
+
+    println!("pre save config: {:?}", std::fs::read_to_string("config.toml")?);
+
+    config::save_config(&shared_config.lock().unwrap())?;
+    config::refresh_config(&shared_config)?;
+
+    println!("post save config: {:?}", std::fs::read_to_string("config.toml")?);
+    */
+
     // Main loop
     loop{
+        let (current_delay, current_key) = {
+            let cfg = shared_config.lock().unwrap();
+            (cfg.delay, cfg.key)
+        };
+
         if key_held.load(Ordering::Relaxed){
-            click(&mut device, key)?;
-            thread::sleep(Duration::from_millis(delay as u64));
+            click::click(&mut device, current_key)?;
+            thread::sleep(Duration::from_millis(current_delay as u64));
         }
         else{
+            //refresh_config(&shared_config); // to test if it works
             thread::sleep(Duration::from_millis(10));
         }
     }
-}
-
-// Click function
-fn click(device: &mut VirtualDevice, key: KeyCode) -> Result<(), Box<dyn std::error::Error>> {
-        device.emit(&[InputEvent::new(EventType::KEY.0, key.0, 1,)])?;
-        // 1 ms delay so it registers correctly.
-        thread::sleep(Duration::from_millis(1));
-        device.emit(&[InputEvent::new(EventType::KEY.0, key.0,0)])?;
-    Ok(())
 }
