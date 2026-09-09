@@ -2,6 +2,8 @@ mod config;
 mod input;
 mod click;
 
+use clap::Parser;
+
 use std::time::Duration;
 use std::thread;
 use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
@@ -9,8 +11,91 @@ use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
 use evdev::{AttributeSet, KeyCode};
 use evdev::uinput::{VirtualDevice};
 
+#[derive(Parser)]
+struct Cli {
+    #[command(subcommand)]
+    command: Option<Command>,
+}
+
+#[derive(clap::Subcommand)]
+enum Command{
+    Config{
+        #[command(subcommand)]
+        command: ConfigCommand
+    }
+}
+
+#[derive(clap::Subcommand)]
+enum ConfigCommand{
+    Load,
+
+    Set{
+        variable: String,
+        value: String,
+    },
+
+    Refresh
+}
+
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("main.rs initialized"); // just to test if it loads correctly
+    //println!("main.rs initialized"); // just to test if it loads correctly
+
+    let args = Cli::parse();
+
+    match args.command{
+        Some(Command::Config { command }) => {
+            match command{
+                ConfigCommand::Load => {
+                    let config = config::load_config()?;
+                    println!("{config:?}");
+                }
+                ConfigCommand::Set{variable, value} => {
+                    let mut config = config::load_config()?;
+
+                    match variable.as_str(){
+                        "delay" => {
+                            config.delay = value.parse()?;
+                        }
+
+                        "keybind" => {
+                            config.keybind = value;
+                        }
+
+                        "key" => {
+                            config.key = match value.as_str(){
+                                "left" => KeyCode::BTN_LEFT,
+                                "right" => KeyCode::BTN_RIGHT,
+                                _ => return Err("Invalid mouse key".into())
+                            };
+                        }
+
+                        "toggle" => {
+                            config.toggle = value.parse()?;
+                        }
+
+                        "input_device_path" => {
+                            config.input_device_path = value;
+                        }
+
+                        _ => {
+                            return Err({variable}.into());
+                        }
+                    }
+
+                    config::save_config(&config)?;
+                }
+                ConfigCommand::Refresh => {
+                    let shared_config = Arc::new(Mutex::new(config::load_config()?));
+                    config::refresh_config(&shared_config)?; 
+                }
+            }
+
+            return Ok(());
+        }
+
+        None => {}
+    }
 
     let shared_config = Arc::new(Mutex::new(config::load_config()?));
 
