@@ -1,5 +1,0 @@
-delay = 500
-keybind = "KEY_F"
-key = "left"
-toggle = true
-input_device_path = "/dev/input/event3"

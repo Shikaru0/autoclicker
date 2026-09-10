@@ -22,9 +22,34 @@ struct ConfigFile{
     input_device_path: String
 }
 
+pub fn config_path() -> Result<std::path::PathBuf, Box<dyn std::error::Error>>{
+    let config_dir = dirs::config_dir().ok_or("Could not find config directory")?;
+    let app_config_dir = config_dir.join("rust_auto_clicker");
+    std::fs::create_dir_all(&app_config_dir)?;
+    let config_file_path = app_config_dir.join("config.toml");
+
+    if !config_file_path.exists(){
+        let default_config = ConfigFile{
+            delay: 100,
+            keybind: "KEY_F1".to_string(),
+            key: "left".to_string(),
+            toggle: true,
+            input_device_path: "/dev/input/event3".to_string()
+        };
+
+        let toml = toml::to_string_pretty(&default_config)?;
+        std::fs::write(&config_file_path, toml)?;
+    }
+
+    Ok(config_file_path)
+}
+
+
 pub fn load_config() -> Result<AppConfig, Box<dyn std::error::Error>>{
+    let path = config_path()?;
+
     let settings = Config::builder()
-        .add_source(config::File::with_name("config"))
+        .add_source(config::File::from(path))
         .build()?;
     
     let delay = settings.get_int("delay")?;
@@ -65,7 +90,7 @@ pub fn save_config(config: &AppConfig) -> Result<(), Box<dyn std::error::Error>>
     };
 
     let toml = toml::to_string_pretty(&file_config)?;
-    std::fs::write("config.toml", toml)?;
+    std::fs::write(config_path()?, toml)?;
 
     Ok(())
 }

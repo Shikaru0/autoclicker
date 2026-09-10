@@ -34,15 +34,11 @@ enum ConfigCommand{
         value: String,
     },
 
-    Refresh,
-
     List
 }
 
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    //println!("main.rs initialized"); // just to test if it loads correctly
-
     let args = Cli::parse();
 
     match args.command{
@@ -87,10 +83,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                     config::save_config(&config)?;
                 }
-                ConfigCommand::Refresh => {
-                    let shared_config = Arc::new(Mutex::new(config::load_config()?));
-                    config::refresh_config(&shared_config)?; 
-                }
                 ConfigCommand::List => {
                     let config = config::load_config()?;
                     println!("{config:?}");
@@ -124,21 +116,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Insert a pause so the system can detect and initialize the new device.
     thread::sleep(Duration::from_millis(300));
 
-    // Quick test to see if config saving/loading/refreshing works. (for this to work, make sure that in cfg.delay = x, x is different from delay in config.toml)
-    /*
-    {
-        let mut cfg = shared_config.lock().unwrap();
-        cfg.delay = 300;
-    }
-
-    println!("pre save config: {:?}", std::fs::read_to_string("config.toml")?);
-
-    config::save_config(&shared_config.lock().unwrap())?;
-    config::refresh_config(&shared_config)?;
-
-    println!("post save config: {:?}", std::fs::read_to_string("config.toml")?);
-    */
-
     // Main loop
     loop{
         let (current_delay, current_key) = {
@@ -151,7 +128,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             thread::sleep(Duration::from_millis(current_delay as u64));
         }
         else{
-            //refresh_config(&shared_config); // to test if it works
             thread::sleep(Duration::from_millis(10));
         }
     }
