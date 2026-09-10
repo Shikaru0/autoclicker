@@ -27,8 +27,6 @@ enum Command{
 
 #[derive(clap::Subcommand)]
 enum ConfigCommand{
-    Load,
-
     Set{
         variable: String,
         value: String,
@@ -44,10 +42,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match args.command{
         Some(Command::Config { command }) => {
             match command{
-                ConfigCommand::Load => {
-                    let config = config::load_config()?;
-                    println!("{config:?}");
-                }
                 ConfigCommand::Set{variable, value} => {
                     let mut config = config::load_config()?;
 

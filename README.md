@@ -25,6 +25,26 @@ Look at the list of devices, find which event is your desired device (keyboard /
 For instance, if our desired event = 0, we change our input_device_path from "/dev/input/event3" to "/dev/input/event0". 
 This should not be done in app runtime to avoid conflicts.
 
+## CLI
+Commands:
+
+```bash
+config help
+
+config set <VARIABLE> <VALUE> 
+
+config list
+```
+config help - Displays information about the available commands, built-in with [clap](https://docs.rs/clap/latest/clap/).
+config set  - Set a value in config.toml to the given value. Then saves the config.
+`<VARIABLE>` is the configuration variable to change, and `<VALUE>` is the string value to assign to it.
+For instance:
+```bash
+./autoclicker config set min_delay 85
+```
+sets the min_delay in config.toml to 85.
+config list - Loads config from config.toml and prints (AppConfig) output.
+
 ## How does it work?
 
 Wayland does not allow applications to click in other windows. To bypass this, it uses evdev to create a virtual device that behaves like a mouse. 
