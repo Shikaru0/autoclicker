@@ -36,13 +36,17 @@ config set <VARIABLE> <VALUE>
 config list
 ```
 config help - Displays information about the available commands, built-in with [clap](https://docs.rs/clap/latest/clap/).
+
 config set  - Set a value in config.toml to the given value. Then saves the config.
+
 `<VARIABLE>` is the configuration variable to change, and `<VALUE>` is the string value to assign to it.
+
 For instance:
 ```bash
 ./autoclicker config set min_delay 85
 ```
 sets the min_delay in config.toml to 85.
+
 config list - Loads config from config.toml and prints (AppConfig) output.
 
 ## How does it work?
