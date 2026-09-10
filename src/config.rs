@@ -6,7 +6,8 @@ use serde::{Serialize, Deserialize};
 
 #[derive(Clone, Debug)]
 pub struct AppConfig{
-    pub delay: i64,
+    pub min_delay: i64,
+    pub max_delay: i64,
     pub keybind: String,
     pub key: KeyCode,
     pub toggle: bool,
@@ -15,7 +16,8 @@ pub struct AppConfig{
 
 #[derive(Serialize, Deserialize)]
 struct ConfigFile{
-    delay: i64,
+    min_delay: i64,
+    max_delay: i64,
     keybind: String,
     key: String,
     toggle: bool,
@@ -24,13 +26,14 @@ struct ConfigFile{
 
 pub fn config_path() -> Result<std::path::PathBuf, Box<dyn std::error::Error>>{
     let config_dir = dirs::config_dir().ok_or("Could not find config directory")?;
-    let app_config_dir = config_dir.join("rust_auto_clicker");
+    let app_config_dir = config_dir.join("rust-autoclicker");
     std::fs::create_dir_all(&app_config_dir)?;
     let config_file_path = app_config_dir.join("config.toml");
 
     if !config_file_path.exists(){
         let default_config = ConfigFile{
-            delay: 100,
+            min_delay: 100,
+            max_delay: 115,
             keybind: "KEY_F1".to_string(),
             key: "left".to_string(),
             toggle: true,
@@ -52,8 +55,9 @@ pub fn load_config() -> Result<AppConfig, Box<dyn std::error::Error>>{
         .add_source(config::File::from(path))
         .build()?;
     
-    let delay = settings.get_int("delay")?;
-    
+    let min_delay = settings.get_int("min_delay")?;
+    let max_delay = settings.get_int("max_delay")?;
+
     let input_device_path = settings.get_string("input_device_path")?;
     
     let keybind = settings.get_string("keybind")?;
@@ -66,7 +70,7 @@ pub fn load_config() -> Result<AppConfig, Box<dyn std::error::Error>>{
 
     let toggle = settings.get_bool("toggle")?;
 
-    Ok(AppConfig { delay, keybind, key, toggle, input_device_path })
+    Ok(AppConfig { min_delay, max_delay, keybind, key, toggle, input_device_path })
 }
     
 pub fn refresh_config(shared_config: &Arc<Mutex<AppConfig>>) -> Result<(), Box<dyn std::error::Error>>{
@@ -78,7 +82,8 @@ pub fn refresh_config(shared_config: &Arc<Mutex<AppConfig>>) -> Result<(), Box<d
 
 pub fn save_config(config: &AppConfig) -> Result<(), Box<dyn std::error::Error>>{
     let file_config = ConfigFile{
-        delay: config.delay,
+        min_delay: config.min_delay,
+        max_delay: config.max_delay,
         keybind: config.keybind.clone(),
         key: match config.key{
             KeyCode::BTN_LEFT => "left".to_string(),

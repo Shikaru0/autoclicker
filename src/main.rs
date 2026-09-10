@@ -52,8 +52,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let mut config = config::load_config()?;
 
                     match variable.as_str(){
-                        "delay" => {
-                            config.delay = value.parse()?;
+                        "min_delay" => {
+                            config.min_delay = value.parse()?;
+                        }
+                        "max_delay" => {
+                            config.max_delay = value.parse()?;
                         }
 
                         "keybind" => {
@@ -118,14 +121,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Main loop
     loop{
-        let (current_delay, current_key) = {
+        let (current_min_delay, current_max_delay, current_key) = {
             let cfg = shared_config.lock().unwrap();
-            (cfg.delay, cfg.key)
+            (cfg.min_delay, cfg.max_delay, cfg.key)
         };
 
         if key_held.load(Ordering::Relaxed){
+            let delay = if current_min_delay != current_max_delay {
+                rand::random_range(current_min_delay..current_max_delay)
+            } else {
+                current_min_delay
+            };
+            println!("Click delay: {delay}");
             click::click(&mut device, current_key)?;
-            thread::sleep(Duration::from_millis(current_delay as u64));
+            thread::sleep(Duration::from_millis(delay as u64));
         }
         else{
             thread::sleep(Duration::from_millis(10));
