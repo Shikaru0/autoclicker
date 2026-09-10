@@ -12,6 +12,21 @@ cargo build --release
 ```
 
 ## Configuring
+
+### Where is config.toml?
+The config.toml is auto-generated in the [config_dir](https://docs.rs/dirs/latest/dirs/fn.config_dir.html) by [dirs](https://docs.rs/dirs/latest/dirs/).
+
+| Platform | Value | Example |
+| -------- | ----- | ------- |
+| Linux | `$XDG_CONFIG_HOME` or `$HOME`/.config | `/home/alice/.config` |
+| macOS | `$HOME`/Library/Application Support | `/Users/Alice/Library/Application Support` |
+| Windows | `{FOLDERID_RoamingAppData}` | `C:\Users\Alice\AppData\Roaming` |
+
+The `config.toml` is created under the `rust-autoclicker` directory.
+
+Example: `/home/alice/.config/rust-autoclicker/`
+
+### Configuring input device
 In order for the keybind (hotkey) to work correctly, you need to set the correct device in the config.toml.
 To find out which device is correct, install `evtest` or a different tool capable of monitoring input events. For this guide, we will be using `evtest`.
 
