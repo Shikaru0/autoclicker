@@ -34,7 +34,9 @@ enum ConfigCommand{
         value: String,
     },
 
-    Refresh
+    Refresh,
+
+    List
 }
 
 
@@ -88,6 +90,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ConfigCommand::Refresh => {
                     let shared_config = Arc::new(Mutex::new(config::load_config()?));
                     config::refresh_config(&shared_config)?; 
+                }
+                ConfigCommand::List => {
+                    let config = config::load_config()?;
+                    println!("{config:?}");
                 }
             }
 
