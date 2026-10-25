@@ -2,6 +2,12 @@
 
 A lightweight UNIX autoclicker written in Rust with Wayland support, by using [evdev](https://docs.rs/evdev/latest/evdev/) for input handling.
 
+[![CI](https://github.com/Shikaru0/autoclicker/actions/workflows/rust.yml/badge.svg)](https://github.com/Shikaru0/autoclicker/actions/workflows/rust.yml)
+[![GitHub Release](https://img.shields.io/github/v/release/Shikaru0/autoclicker)](https://github.com/Shikaru0/autoclicker/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Built with Rust](https://img.shields.io/badge/Built%20with-Rust-CE412B?logo=rust&logoColor=white)](https://www.rust-lang.org/)
+[![Wayland](https://img.shields.io/badge/Wayland-Supported-FFCC00?logo=wayland&logoColor=black)](https://wayland.freedesktop.org/)
+
 ## Building
 *_Requires Rust_*
 
