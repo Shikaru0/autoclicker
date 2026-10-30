@@ -76,6 +76,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             config.key = match value.as_str() {
                                 "left" => KeyCode::BTN_LEFT,
                                 "right" => KeyCode::BTN_RIGHT,
+                                "extra" => KeyCode::BTN_EXTRA,
+                                "middle" => KeyCode::BTN_MIDDLE,
+                                "side" => KeyCode::BTN_SIDE,
+                                "forward" => KeyCode::BTN_FORWARD,
+                                "back" => KeyCode::BTN_BACK,
                                 _ => return Err("Invalid mouse key".into()),
                             };
                         }
@@ -115,6 +120,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         "key" => match config.key {
                             KeyCode::BTN_LEFT => println!("left"),
                             KeyCode::BTN_RIGHT => println!("right"),
+                            KeyCode::BTN_EXTRA => println!("extra"),
+                            KeyCode::BTN_MIDDLE => println!("middle"),
+                            KeyCode::BTN_SIDE => println!("side"),
+                            KeyCode::BTN_FORWARD => println!("forward"),
+                            KeyCode::BTN_BACK => println!("back"),
                             _ => return Err("Invalid mouse key in config".into()),
                         },
                         "toggle" => println!("{}", config.toggle),
@@ -143,6 +153,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut keys = AttributeSet::<KeyCode>::new();
     keys.insert(KeyCode::BTN_LEFT);
     keys.insert(KeyCode::BTN_RIGHT);
+    keys.insert(KeyCode::BTN_EXTRA);
+    keys.insert(KeyCode::BTN_MIDDLE);
+    keys.insert(KeyCode::BTN_SIDE);
+    keys.insert(KeyCode::BTN_FORWARD);
+    keys.insert(KeyCode::BTN_BACK);
+
 
     let mut device = VirtualDevice::builder()?
         .name("rust-autoclicker")

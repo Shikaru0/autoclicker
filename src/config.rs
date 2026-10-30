@@ -81,7 +81,12 @@ pub fn load_config() -> Result<AppConfig, Box<dyn std::error::Error>> {
     let key = match settings.get_string("key")?.as_str() {
         "left" => KeyCode::BTN_LEFT,
         "right" => KeyCode::BTN_RIGHT,
-        _ => return Err("Use 'left' or 'right' for key input.".into()),
+        "extra" => KeyCode::BTN_EXTRA,
+        "middle" => KeyCode::BTN_MIDDLE,
+        "side" => KeyCode::BTN_SIDE,
+        "forward" => KeyCode::BTN_FORWARD,
+        "back" => KeyCode::BTN_BACK,
+        _ => return Err("Invalid key, supported: 'left', 'right', 'extra', 'middle', 'side', 'forward', 'back'".into()),
     };
 
     let toggle = settings.get_bool("toggle")?;
@@ -120,6 +125,11 @@ pub fn save_config(config: &AppConfig) -> Result<(), Box<dyn std::error::Error>>
         key: match config.key {
             KeyCode::BTN_LEFT => "left".to_string(),
             KeyCode::BTN_RIGHT => "right".to_string(),
+            KeyCode::BTN_EXTRA => "extra".to_string(),
+            KeyCode::BTN_MIDDLE => "middle".to_string(),
+            KeyCode::BTN_SIDE => "side".to_string(),
+            KeyCode::BTN_FORWARD => "forward".to_string(),
+            KeyCode::BTN_BACK => "back".to_string(),
             _ => return Err("Invalid mouse button.".into()),
         },
         toggle: config.toggle,
