@@ -20,6 +20,7 @@ pub struct AppConfig {
     pub toggle: bool,
     pub input_device_path: String,
     pub click_count: u32,
+    pub max_clicks: u32,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -33,6 +34,7 @@ struct ConfigFile {
     toggle: bool,
     input_device_path: String,
     click_count: u32,
+    max_clicks: u32,
 }
 
 pub fn config_path() -> Result<std::path::PathBuf, Box<dyn std::error::Error>> {
@@ -52,6 +54,7 @@ pub fn config_path() -> Result<std::path::PathBuf, Box<dyn std::error::Error>> {
             toggle: true,
             input_device_path: "/dev/input/event3".to_string(),
             click_count: 1,
+            max_clicks: 0,
         };
 
         let toml = toml::to_string_pretty(&default_config)?;
@@ -96,6 +99,8 @@ pub fn load_config() -> Result<AppConfig, Box<dyn std::error::Error>> {
 
     let click_count = settings.get_int("click_count").unwrap_or(1) as u32;
 
+    let max_clicks = settings.get_int("max_clicks").unwrap_or(0) as u32;
+
     Ok(AppConfig {
         min_delay,
         max_delay,
@@ -106,6 +111,7 @@ pub fn load_config() -> Result<AppConfig, Box<dyn std::error::Error>> {
         toggle,
         input_device_path,
         click_count,
+        max_clicks,
     })
 }
 
@@ -138,6 +144,7 @@ pub fn save_config(config: &AppConfig) -> Result<(), Box<dyn std::error::Error>>
         toggle: config.toggle,
         input_device_path: config.input_device_path.clone(),
         click_count: config.click_count,
+        max_clicks: config.max_clicks,
     };
 
     let toml = toml::to_string_pretty(&file_config)?;

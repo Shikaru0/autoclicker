@@ -4,6 +4,7 @@ mod input;
 
 use clap::Parser;
 
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread;
 use std::time::Duration;
@@ -98,6 +99,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             config.click_count = parsed;
                         }
 
+                        "max_clicks" => {
+                            config.max_clicks = value.parse()?;
+                        }
+
                         _ => {
                             return Err({ variable }.into());
                         }
@@ -127,6 +132,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         "toggle" => println!("{}", config.toggle),
                         "input_device_path" => println!("{}", config.input_device_path),
                         "click_count" => println!("{}", config.click_count),
+                        "max_clicks" => println!("{}", config.max_clicks),
                         _ => return Err(variable.into()),
                     }
                 }
@@ -165,6 +171,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let held_state: input::HeldState = Arc::new((Mutex::new(false), Condvar::new()));
 
+    let total_clicks = Arc::new(AtomicU32::new(0));
+
     // Initialize input thread
     input::initialize(Arc::clone(&held_state), Arc::clone(&shared_config));
 
@@ -183,6 +191,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             current_click_count,
             current_min_burst_delay,
             current_max_burst_delay,
+            current_max_clicks,
         ) = {
             let cfg = shared_config.lock().unwrap();
             (
@@ -192,8 +201,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 cfg.click_count,
                 cfg.min_burst_delay,
                 cfg.max_burst_delay,
+                cfg.max_clicks,
             )
         };
+
+        if current_max_clicks != 0 && total_clicks.load(Ordering::Relaxed) >= current_max_clicks {
+            println!("max clicks reached ({}); parking. Bump max_clicks in config to continiue.", current_max_clicks);
+
+            let (lock, cvar) = &*held_state;
+            let mut held = lock.lock().unwrap();
+            while total_clicks.load(Ordering::Relaxed) >= current_max_clicks {
+                held = cvar.wait(held).unwrap();
+            }
+            drop(held);
+            continue;
+        }
 
         let (lock, cvar) = &*held_state;
         let mut held = lock.lock().unwrap();
@@ -220,10 +242,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             current_click_count,
             current_min_burst_delay,
             current_max_burst_delay,
+            &total_clicks,
+            current_max_clicks,
         )?;
 
+        let _budget_exhausted = {
+            current_max_clicks != 0 && total_clicks.load(Ordering::Relaxed) >= current_max_clicks
+        };
+
+        let (lock, cvar) = &*held_state;
         let mut held = lock.lock().unwrap();
-        if *held {
+        if *held && !_budget_exhausted {
             let (guard, _timeout) = cvar
                 .wait_timeout(held, Duration::from_millis(delay as u64))
                 .unwrap();
