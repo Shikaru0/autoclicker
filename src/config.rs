@@ -1,7 +1,12 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    sync::{Arc, Mutex, mpsc},
+    thread,
+    time::Duration,
+};
 
 use config::Config;
 use evdev::KeyCode;
+use notify::{EventKind, RecursiveMode, Watcher, recommended_watcher};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug)]
@@ -104,6 +109,47 @@ pub fn save_config(config: &AppConfig) -> Result<(), Box<dyn std::error::Error>>
 
     let toml = toml::to_string_pretty(&file_config)?;
     std::fs::write(config_path()?, toml)?;
+
+    Ok(())
+}
+
+pub fn watch_config(
+    shared_config: Arc<Mutex<AppConfig>>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let path = config_path()?;
+    let parent = path
+        .parent()
+        .ok_or("Config file has no parent directory")?
+        .to_path_buf();
+
+    let (tx, rx) = mpsc::channel();
+    let mut watcher = recommended_watcher(tx)?;
+    watcher.watch(&parent, RecursiveMode::NonRecursive)?;
+
+    thread::spawn(move || {
+        let _watcher = watcher;
+        for res in rx.iter() {
+            let Ok(event) = res else {
+                continue;
+            };
+
+            if matches!(event.kind, EventKind::Access(_)) {
+                continue;
+            }
+
+            if !event.paths.iter().any(|p| p == &path) {
+                continue;
+            }
+
+            thread::sleep(Duration::from_millis(50));
+            while rx.try_recv().is_ok() {}
+
+            match refresh_config(&shared_config) {
+                Ok(()) => println!("Config reloaded."),
+                Err(e) => eprintln!("Config reload failed: {e}"),
+            }
+        }
+    });
 
     Ok(())
 }

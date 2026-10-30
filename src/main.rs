@@ -109,6 +109,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize input thread
     input::initialize(Arc::clone(&key_held), Arc::clone(&shared_config));
 
+    // Watch config.toml
+    config::watch_config(Arc::clone(&shared_config))?;
+
     // Insert a pause so the system can detect and initialize the new device.
     thread::sleep(Duration::from_millis(300));
 
