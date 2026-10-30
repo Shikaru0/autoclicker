@@ -34,6 +34,9 @@ enum ConfigCommand {
     /// Set a value in config.toml to the given value, then saves the config
     Set { variable: String, value: String },
 
+    /// Get the value of a configuration variable from config.toml
+    Get { variable: String },
+
     /// Loads config from config.toml and prints (AppConfig) output
     List,
 }
@@ -81,6 +84,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
 
                     config::save_config(&config)?;
+                }
+                ConfigCommand::Get { variable } => {
+                    let config = config::load_config()?;
+                    
+                    match variable.as_str() {
+                        "min_delay" => println!("{}", config.min_delay),
+                        "max_delay" => println!("{}", config.max_delay),
+                        "keybind" => println!("{}", config.keybind),
+                        "key" => match config.key {
+                            KeyCode::BTN_LEFT => println!("left"),
+                            KeyCode::BTN_RIGHT => println!("right"),
+                            _ => return Err("Invalid mouse key in config".into()),
+                        },
+                        "toggle" => println!("{}", config.toggle),
+                        "input_device_path" => println!("{}", config.input_device_path),
+                        _ => return Err(variable.into()),
+                    }
                 }
                 ConfigCommand::List => {
                     let config = config::load_config()?;
