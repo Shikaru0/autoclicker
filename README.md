@@ -32,6 +32,8 @@ The `config.toml` is created under the `rust-autoclicker` directory.
 
 Example: `/home/alice/.config/rust-autoclicker/`
 
+If you ran the application atleast once (causing it to generate a default `config.toml`), you can also run `config path` to see the (absolute) path to `config.toml`.
+
 ### Configuring input device
 In order for the keybind (hotkey) to work correctly, you need to set the correct device in the config.toml.
 To find out which device is correct, install `evtest` or a different tool capable of monitoring input events. For this guide, we will be using `evtest`.
