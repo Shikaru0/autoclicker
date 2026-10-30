@@ -44,7 +44,7 @@ sudo evtest
 
 Look at the list of devices, find which event is your desired device (keyboard / mouse) and set the input_device_path event number to that number.
 For instance, if our desired event = 0, we change our input_device_path from "/dev/input/event3" to "/dev/input/event0". 
-This should not be done in app runtime to avoid conflicts.
+This can also be changed at runtime — the input thread reopens the new device automatically (see [How does application config reload?](#how-does-application-config-reload)).
 
 ### How does application config reload?
 While the autoclicker is running, it watches `config.toml` for changes using [notify](https://docs.rs/notify/latest/notify/).
@@ -69,11 +69,32 @@ config path
 
 `<VARIABLE>` is the configuration variable to change (for `set`) or read (for `get`), and `<VALUE>` is the string value to assign to it.
 
+Available variables:
+
+| Variable | Type | Description |
+| -------- | ---- | ----------- |
+| `min_delay` | integer (ms) | Minimum delay between bursts. |
+| `max_delay` | integer (ms) | Maximum delay between bursts. A random value between `min_delay` and `max_delay` is used per cycle. |
+| `min_burst_delay` | integer (ms) | Minimum delay between clicks inside a burst. |
+| `max_burst_delay` | integer (ms) | Maximum delay between clicks inside a burst. A random value between `min_burst_delay` and `max_burst_delay` is used between consecutive clicks. |
+| `click_count` | integer (≥1) | Number of clicks per burst. `1` is a single click, `2` a double-click, `3` a triple-click, and so on. |
+| `keybind` | string | evdev key code for the hotkey, e.g. `KEY_F1`. |
+| `key` | `left` \| `right` | Which mouse button to click. |
+| `toggle` | boolean | If `true`, the hotkey toggles clicking on/off. If `false`, clicking happens only while the hotkey is held. |
+| `input_device_path` | string | Path to the evdev device to read the hotkey from, e.g. `/dev/input/event3`. |
+
 For instance:
 ```bash
 ./autoclicker config set min_delay 85
 ```
 sets the min_delay in config.toml to 85.
+
+```bash
+./autoclicker config set click_count 2
+./autoclicker config set min_burst_delay 10
+./autoclicker config set max_burst_delay 30
+```
+configures a double-click burst with 10–30ms between the two clicks.
 
 ## How does it work?
 
