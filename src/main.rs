@@ -4,10 +4,7 @@ mod input;
 
 use clap::Parser;
 
-use std::sync::{
-    Arc, Mutex,
-    atomic::{AtomicBool, Ordering},
-};
+use std::sync::{Arc, Condvar, Mutex};
 use std::thread;
 use std::time::Duration;
 
@@ -159,7 +156,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     keys.insert(KeyCode::BTN_FORWARD);
     keys.insert(KeyCode::BTN_BACK);
 
-
     let mut device = VirtualDevice::builder()?
         .name("rust-autoclicker")
         .with_keys(&keys)?
@@ -167,10 +163,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Keys and Device set up.");
 
-    let key_held = Arc::new(AtomicBool::new(false));
+    let held_state: input::HeldState = Arc::new((Mutex::new(false), Condvar::new()));
 
     // Initialize input thread
-    input::initialize(Arc::clone(&key_held), Arc::clone(&shared_config));
+    input::initialize(Arc::clone(&held_state), Arc::clone(&shared_config));
 
     // Watch config.toml
     config::watch_config(Arc::clone(&shared_config))?;
@@ -199,23 +195,40 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             )
         };
 
-        if key_held.load(Ordering::Relaxed) {
-            let delay = if current_min_delay != current_max_delay {
-                rand::random_range(current_min_delay..current_max_delay)
-            } else {
-                current_min_delay
-            };
-            println!("Click delay: {delay}");
-            click::click(
-                &mut device,
-                current_key,
-                current_click_count,
-                current_min_burst_delay,
-                current_max_burst_delay,
-            )?;
-            thread::sleep(Duration::from_millis(delay as u64));
-        } else {
-            thread::sleep(Duration::from_millis(10));
+        let (lock, cvar) = &*held_state;
+        let mut held = lock.lock().unwrap();
+
+        if !*held {
+            // Idle until cvar notifies
+            while !*held {
+                held = cvar.wait(held).unwrap();
+            }
         }
+
+        // Release mutex so input thread can flip the bool
+        drop(held);
+
+        let delay = if current_min_delay != current_max_delay {
+            rand::random_range(current_min_delay..current_max_delay)
+        } else {
+            current_min_delay
+        };
+        println!("Click delay: {delay}");
+        click::click(
+            &mut device,
+            current_key,
+            current_click_count,
+            current_min_burst_delay,
+            current_max_burst_delay,
+        )?;
+
+        let mut held = lock.lock().unwrap();
+        if *held {
+            let (guard, _timeout) = cvar
+                .wait_timeout(held, Duration::from_millis(delay as u64))
+                .unwrap();
+            held = guard;
+        }
+        drop(held);
     }
 }

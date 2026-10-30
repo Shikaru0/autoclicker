@@ -1,15 +1,15 @@
 use evdev::{Device, EventSummary, KeyCode};
 use std::str::FromStr;
-use std::sync::{
-    Arc, Mutex,
-    atomic::{AtomicBool, Ordering},
-};
+use std::sync::Condvar;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
 use crate::config::AppConfig;
 
-pub fn initialize(key_held: Arc<AtomicBool>, config: Arc<Mutex<AppConfig>>) {
+pub type HeldState = Arc<(Mutex<bool>, Condvar)>;
+
+pub fn initialize(held_state: HeldState, config: Arc<Mutex<AppConfig>>) {
     thread::spawn(
         move || -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             let mut current_device_path = {
@@ -48,17 +48,23 @@ pub fn initialize(key_held: Arc<AtomicBool>, config: Arc<Mutex<AppConfig>>) {
                             if let EventSummary::Key(_, k, state) = event.destructure()
                                 && k == current_keybind
                             {
+                                let (lock, cvar) = &*held_state;
+                                let mut held = lock.lock().unwrap();
+
                                 if current_toggle {
                                     if state == 1 {
-                                        let _ = key_held.fetch_xor(true, Ordering::Relaxed);
+                                        *held = !*held;
+                                        cvar.notify_one();
                                     }
                                 } else {
                                     match state {
                                         1 => {
-                                            key_held.store(true, Ordering::Relaxed);
+                                            *held = true;
+                                            cvar.notify_one();
                                         }
                                         0 => {
-                                            key_held.store(false, Ordering::Relaxed);
+                                            *held = false;
+                                            cvar.notify_one();
                                         }
                                         _ => {}
                                     }

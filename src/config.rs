@@ -86,7 +86,10 @@ pub fn load_config() -> Result<AppConfig, Box<dyn std::error::Error>> {
         "side" => KeyCode::BTN_SIDE,
         "forward" => KeyCode::BTN_FORWARD,
         "back" => KeyCode::BTN_BACK,
-        _ => return Err("Invalid key, supported: 'left', 'right', 'extra', 'middle', 'side', 'forward', 'back'".into()),
+        _ => return Err(
+            "Invalid key, supported: 'left', 'right', 'extra', 'middle', 'side', 'forward', 'back'"
+                .into(),
+        ),
     };
 
     let toggle = settings.get_bool("toggle")?;
