@@ -22,6 +22,7 @@ struct Cli {
 
 #[derive(clap::Subcommand)]
 enum Command {
+    /// Manage application configuration
     Config {
         #[command(subcommand)]
         command: ConfigCommand,
@@ -30,8 +31,10 @@ enum Command {
 
 #[derive(clap::Subcommand)]
 enum ConfigCommand {
+    /// Set a value in config.toml to the given value, then saves the config
     Set { variable: String, value: String },
 
+    /// Loads config from config.toml and prints (AppConfig) output
     List,
 }
 
