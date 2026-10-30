@@ -90,7 +90,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 ConfigCommand::Get { variable } => {
                     let config = config::load_config()?;
-                    
+
                     match variable.as_str() {
                         "min_delay" => println!("{}", config.min_delay),
                         "max_delay" => println!("{}", config.max_delay),
