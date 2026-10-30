@@ -61,6 +61,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             config.max_delay = value.parse()?;
                         }
 
+                        "min_burst_delay" => {
+                            config.min_burst_delay = value.parse()?;
+                        }
+                        "max_burst_delay" => {
+                            config.max_burst_delay = value.parse()?;
+                        }
+
                         "keybind" => {
                             config.keybind = value;
                         }
@@ -81,6 +88,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             config.input_device_path = value;
                         }
 
+                        "click_count" => {
+                            let parsed: u32 = value.parse()?;
+                            if parsed == 0 {
+                                return Err("click_count must be at least 1".into());
+                            }
+                            config.click_count = parsed;
+                        }
+
                         _ => {
                             return Err({ variable }.into());
                         }
@@ -94,6 +109,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     match variable.as_str() {
                         "min_delay" => println!("{}", config.min_delay),
                         "max_delay" => println!("{}", config.max_delay),
+                        "min_burst_delay" => println!("{}", config.min_burst_delay),
+                        "max_burst_delay" => println!("{}", config.max_burst_delay),
                         "keybind" => println!("{}", config.keybind),
                         "key" => match config.key {
                             KeyCode::BTN_LEFT => println!("left"),
@@ -102,6 +119,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         },
                         "toggle" => println!("{}", config.toggle),
                         "input_device_path" => println!("{}", config.input_device_path),
+                        "click_count" => println!("{}", config.click_count),
                         _ => return Err(variable.into()),
                     }
                 }
@@ -146,9 +164,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Main loop
     loop {
-        let (current_min_delay, current_max_delay, current_key) = {
+        let (
+            current_min_delay,
+            current_max_delay,
+            current_key,
+            current_click_count,
+            current_min_burst_delay,
+            current_max_burst_delay,
+        ) = {
             let cfg = shared_config.lock().unwrap();
-            (cfg.min_delay, cfg.max_delay, cfg.key)
+            (
+                cfg.min_delay,
+                cfg.max_delay,
+                cfg.key,
+                cfg.click_count,
+                cfg.min_burst_delay,
+                cfg.max_burst_delay,
+            )
         };
 
         if key_held.load(Ordering::Relaxed) {
@@ -158,7 +190,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 current_min_delay
             };
             println!("Click delay: {delay}");
-            click::click(&mut device, current_key)?;
+            click::click(
+                &mut device,
+                current_key,
+                current_click_count,
+                current_min_burst_delay,
+                current_max_burst_delay,
+            )?;
             thread::sleep(Duration::from_millis(delay as u64));
         } else {
             thread::sleep(Duration::from_millis(10));

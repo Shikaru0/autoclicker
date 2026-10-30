@@ -13,20 +13,26 @@ use serde::{Deserialize, Serialize};
 pub struct AppConfig {
     pub min_delay: i64,
     pub max_delay: i64,
+    pub min_burst_delay: u64,
+    pub max_burst_delay: u64,
     pub keybind: String,
     pub key: KeyCode,
     pub toggle: bool,
     pub input_device_path: String,
+    pub click_count: u32,
 }
 
 #[derive(Serialize, Deserialize)]
 struct ConfigFile {
     min_delay: i64,
     max_delay: i64,
+    min_burst_delay: u64,
+    max_burst_delay: u64,
     keybind: String,
     key: String,
     toggle: bool,
     input_device_path: String,
+    click_count: u32,
 }
 
 pub fn config_path() -> Result<std::path::PathBuf, Box<dyn std::error::Error>> {
@@ -39,10 +45,13 @@ pub fn config_path() -> Result<std::path::PathBuf, Box<dyn std::error::Error>> {
         let default_config = ConfigFile {
             min_delay: 100,
             max_delay: 115,
+            min_burst_delay: 1,
+            max_burst_delay: 3,
             keybind: "KEY_F1".to_string(),
             key: "left".to_string(),
             toggle: true,
             input_device_path: "/dev/input/event3".to_string(),
+            click_count: 1,
         };
 
         let toml = toml::to_string_pretty(&default_config)?;
@@ -62,6 +71,9 @@ pub fn load_config() -> Result<AppConfig, Box<dyn std::error::Error>> {
     let min_delay = settings.get_int("min_delay")?;
     let max_delay = settings.get_int("max_delay")?;
 
+    let min_burst_delay = settings.get_int("min_burst_delay").unwrap_or(1) as u64;
+    let max_burst_delay = settings.get_int("max_burst_delay").unwrap_or(3) as u64;
+
     let input_device_path = settings.get_string("input_device_path")?;
 
     let keybind = settings.get_string("keybind")?;
@@ -74,13 +86,18 @@ pub fn load_config() -> Result<AppConfig, Box<dyn std::error::Error>> {
 
     let toggle = settings.get_bool("toggle")?;
 
+    let click_count = settings.get_int("click_count").unwrap_or(1) as u32;
+
     Ok(AppConfig {
         min_delay,
         max_delay,
+        min_burst_delay,
+        max_burst_delay,
         keybind,
         key,
         toggle,
         input_device_path,
+        click_count,
     })
 }
 
@@ -97,6 +114,8 @@ pub fn save_config(config: &AppConfig) -> Result<(), Box<dyn std::error::Error>>
     let file_config = ConfigFile {
         min_delay: config.min_delay,
         max_delay: config.max_delay,
+        min_burst_delay: config.min_burst_delay,
+        max_burst_delay: config.max_burst_delay,
         keybind: config.keybind.clone(),
         key: match config.key {
             KeyCode::BTN_LEFT => "left".to_string(),
@@ -105,6 +124,7 @@ pub fn save_config(config: &AppConfig) -> Result<(), Box<dyn std::error::Error>>
         },
         toggle: config.toggle,
         input_device_path: config.input_device_path.clone(),
+        click_count: config.click_count,
     };
 
     let toml = toml::to_string_pretty(&file_config)?;
