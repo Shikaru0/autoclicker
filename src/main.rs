@@ -39,6 +39,9 @@ enum ConfigCommand {
 
     /// Loads config from config.toml and prints (AppConfig) output
     List,
+
+    /// Print the absolute path to config.toml
+    Path,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -105,6 +108,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ConfigCommand::List => {
                     let config = config::load_config()?;
                     println!("{config:?}");
+                }
+                ConfigCommand::Path => {
+                    println!("{}", config::config_path()?.display());
                 }
             }
 

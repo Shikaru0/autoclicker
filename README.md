@@ -61,12 +61,12 @@ config set <VARIABLE> <VALUE>
 config get <VARIABLE>
 
 config list
+
+config path
 ```
 config help - Displays information about the available commands, built-in with [clap](https://docs.rs/clap/latest/clap/).
 
 config set  - Set a value in config.toml to the given value. Then saves the config.
-
-config get  - Get the value of a configuration variable from config.toml
 
 `<VARIABLE>` is the configuration variable to change, and `<VALUE>` is the string value to assign to it.
 
@@ -76,7 +76,13 @@ For instance:
 ```
 sets the min_delay in config.toml to 85.
 
+config get - Get the value of a configuration variable from config.toml
+
+`<VARIABLE>` is the configuration variable to get.
+
 config list - Loads config from config.toml and prints (AppConfig) output.
+
+config path - Prints the absolute path to config.toml
 
 ## How does it work?
 
