@@ -46,6 +46,10 @@ Look at the list of devices, find which event is your desired device (keyboard /
 For instance, if our desired event = 0, we change our input_device_path from "/dev/input/event3" to "/dev/input/event0". 
 This should not be done in app runtime to avoid conflicts.
 
+### How does application config reload?
+While the autoclicker is running, it watches `config.toml` for changes using [notify](https://docs.rs/notify/latest/notify/).
+This means `config set ...` from another terminal, or a direct file edit, takes effect without needing to restart.
+
 ## CLI
 Commands:
 
