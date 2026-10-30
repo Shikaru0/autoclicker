@@ -1,15 +1,18 @@
+mod click;
 mod config;
 mod input;
-mod click;
 
 use clap::Parser;
 
-use std::time::Duration;
+use std::sync::{
+    Arc, Mutex,
+    atomic::{AtomicBool, Ordering},
+};
 use std::thread;
-use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
+use std::time::Duration;
 
+use evdev::uinput::VirtualDevice;
 use evdev::{AttributeSet, KeyCode};
-use evdev::uinput::{VirtualDevice};
 
 #[derive(Parser)]
 struct Cli {
@@ -18,34 +21,30 @@ struct Cli {
 }
 
 #[derive(clap::Subcommand)]
-enum Command{
-    Config{
+enum Command {
+    Config {
         #[command(subcommand)]
-        command: ConfigCommand
-    }
+        command: ConfigCommand,
+    },
 }
 
 #[derive(clap::Subcommand)]
-enum ConfigCommand{
-    Set{
-        variable: String,
-        value: String,
-    },
+enum ConfigCommand {
+    Set { variable: String, value: String },
 
-    List
+    List,
 }
-
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Cli::parse();
 
-    match args.command{
+    match args.command {
         Some(Command::Config { command }) => {
-            match command{
-                ConfigCommand::Set{variable, value} => {
+            match command {
+                ConfigCommand::Set { variable, value } => {
                     let mut config = config::load_config()?;
 
-                    match variable.as_str(){
+                    match variable.as_str() {
                         "min_delay" => {
                             config.min_delay = value.parse()?;
                         }
@@ -58,10 +57,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
 
                         "key" => {
-                            config.key = match value.as_str(){
+                            config.key = match value.as_str() {
                                 "left" => KeyCode::BTN_LEFT,
                                 "right" => KeyCode::BTN_RIGHT,
-                                _ => return Err("Invalid mouse key".into())
+                                _ => return Err("Invalid mouse key".into()),
                             };
                         }
 
@@ -74,7 +73,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
 
                         _ => {
-                            return Err({variable}.into());
+                            return Err({ variable }.into());
                         }
                     }
 
@@ -114,13 +113,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     thread::sleep(Duration::from_millis(300));
 
     // Main loop
-    loop{
+    loop {
         let (current_min_delay, current_max_delay, current_key) = {
             let cfg = shared_config.lock().unwrap();
             (cfg.min_delay, cfg.max_delay, cfg.key)
         };
 
-        if key_held.load(Ordering::Relaxed){
+        if key_held.load(Ordering::Relaxed) {
             let delay = if current_min_delay != current_max_delay {
                 rand::random_range(current_min_delay..current_max_delay)
             } else {
@@ -129,8 +128,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("Click delay: {delay}");
             click::click(&mut device, current_key)?;
             thread::sleep(Duration::from_millis(delay as u64));
-        }
-        else{
+        } else {
             thread::sleep(Duration::from_millis(10));
         }
     }
