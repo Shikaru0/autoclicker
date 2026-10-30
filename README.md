@@ -79,7 +79,7 @@ Available variables:
 | `max_burst_delay` | integer (ms) | Maximum delay between clicks inside a burst. A random value between `min_burst_delay` and `max_burst_delay` is used between consecutive clicks. |
 | `click_count` | integer (≥1) | Number of clicks per burst. `1` is a single click, `2` a double-click, `3` a triple-click, and so on. |
 | `keybind` | string | evdev key code for the hotkey, e.g. `KEY_F1`. |
-| `key` | `left` \| `right` | Which mouse button to click. |
+| `key` | `left` \| `right` `extra` \| `middle` `side` \| `forward` \| `back` | Which mouse button to click. |
 | `toggle` | boolean | If `true`, the hotkey toggles clicking on/off. If `false`, clicking happens only while the hotkey is held. |
 | `input_device_path` | string | Path to the evdev device to read the hotkey from, e.g. `/dev/input/event3`. |
 
